@@ -1,319 +1,26 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Fiction Writer</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,600;1,400;1,600&family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
-<style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-:root{
-  --bg:#3c3c3c;
-  --bg2:#454545;
-  --bg3:#4e4e4e;
-  --bg4:#585858;
-  --btn:#626262;
-  --border:#2e2e2e;
-  --text:#e8e4df;
-  --text2:#b0aaa4;
-  --text3:#7a7570;
-  --green:#5a9a5a;
-  --amber:#c8a340;
-  --red:#9a4a4a;
-  --strip:44px;
-  --radius:18px;
-}
-html,body{height:100%;overflow:hidden;touch-action:pan-y;}
-body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;}
-
-/* layout */
-#app{display:flex;height:100vh;position:relative;overflow:hidden;}
-
-/* editor */
-#editor-side{flex:1;display:flex;flex-direction:column;overflow:hidden;margin-left:var(--strip);}
-#topbar{display:flex;align-items:center;justify-content:flex-end;padding:14px 18px 8px;flex-shrink:0;}
-#save-status{display:flex;align-items:center;gap:7px;font-size:13px;font-weight:600;color:var(--text2);}
-#save-dot{width:10px;height:10px;border-radius:50%;background:var(--text3);transition:background .4s;}
-#save-dot.saved{background:var(--green);}
-#chapter-label{padding:0 20px 6px;font-family:'EB Garamond',serif;font-size:13px;font-style:italic;color:var(--text3);flex-shrink:0;}
-#write-area{
-  flex:1;padding:10px 22px 40px;overflow-y:auto;
-  background:none;border:none;outline:none;resize:none;
-  color:var(--text);font-family:'EB Garamond',Georgia,serif;
-  font-size:21px;line-height:1.85;caret-color:var(--amber);
-}
-#write-area::placeholder{color:var(--text3);font-style:italic;}
-#write-area::-webkit-scrollbar{width:3px;}
-#write-area::-webkit-scrollbar-thumb{background:var(--border);}
-
-/* drawer */
-#drawer{
-  position:absolute;top:0;left:0;height:100%;
-  width:var(--strip);background:var(--bg2);
-  border-right:1px solid var(--border);
-  z-index:200;display:flex;flex-direction:column;
-  transition:width .3s cubic-bezier(.4,0,.2,1),box-shadow .3s;
-  overflow:hidden;
-}
-#drawer.mid{width:260px;box-shadow:6px 0 30px rgba(0,0,0,.5);}
-#drawer.full{width:min(380px,100vw);box-shadow:6px 0 40px rgba(0,0,0,.7);}
-
-/* handle */
-#drag-handle{
-  position:absolute;top:0;right:0;width:18px;height:100%;
-  cursor:ew-resize;display:flex;align-items:center;justify-content:center;z-index:10;
-}
-.hlines{display:flex;flex-direction:column;gap:5px;}
-.hline{width:2px;height:22px;background:var(--text3);border-radius:2px;opacity:.5;}
-
-/* strip label */
-#strip-label{
-  position:absolute;top:50%;left:0;transform:translateY(-50%);
-  writing-mode:vertical-rl;text-orientation:mixed;
-  font-size:9px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;
-  color:var(--text3);padding:14px 12px;pointer-events:none;
-  white-space:nowrap;transition:opacity .2s;
-}
-#drawer.mid #strip-label,#drawer.full #strip-label{opacity:0;}
-
-/* panel content */
-#panel-content{
-  flex:1;display:flex;flex-direction:column;
-  opacity:0;transition:opacity .2s .06s;
-  overflow:hidden;padding:20px 14px 14px;gap:10px;
-}
-#drawer.mid #panel-content,#drawer.full #panel-content{opacity:1;}
-
-/* mid: section buttons visible; full: hidden */
-#mid-sections{display:none;flex-direction:column;gap:10px;flex:1;overflow-y:auto;}
-#drawer.mid #mid-sections{display:flex;}
-#drawer.full #mid-sections{display:none;}
-
-.section-btn{
-  width:100%;padding:22px 18px;background:var(--btn);
-  border:none;border-radius:var(--radius);color:var(--text);
-  font-family:'EB Garamond',serif;font-size:20px;font-weight:600;
-  font-style:italic;text-align:left;cursor:pointer;
-  transition:background .15s,transform .1s;
-}
-.section-btn:hover{background:var(--bg4);}
-.section-btn:active{transform:scale(.98);}
-.s-count{float:right;font-size:11px;font-style:normal;font-weight:700;color:var(--text3);padding-top:3px;}
-
-/* full: detail panels */
-.detail-panel{display:none;flex-direction:column;height:100%;gap:10px;flex:1;overflow:hidden;}
-#drawer.full .detail-panel.active{display:flex;}
-
-.back-btn{
-  background:none;border:none;color:var(--text3);
-  font-size:12px;font-weight:700;letter-spacing:.1em;
-  text-transform:uppercase;cursor:pointer;text-align:left;
-  padding:4px 0;display:flex;align-items:center;gap:5px;
-  flex-shrink:0;
-}
-.back-btn:hover{color:var(--text2);}
-.detail-title{font-family:'EB Garamond',serif;font-size:28px;font-weight:600;font-style:italic;flex-shrink:0;}
-.detail-scroll{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:10px;padding-bottom:4px;}
-.detail-scroll::-webkit-scrollbar{width:3px;}
-.detail-scroll::-webkit-scrollbar-thumb{background:var(--border);}
-
-/* cards */
-.card{background:var(--btn);border-radius:var(--radius);padding:14px 16px;}
-
-/* chapter card */
-.ch-card{display:flex;align-items:center;gap:12px;cursor:pointer;background:var(--btn);border-radius:var(--radius);padding:12px 14px;transition:background .15s;}
-.ch-card:hover{background:var(--bg4);}
-.ch-card.active-ch{border-left:3px solid var(--amber);}
-.ch-num{font-size:11px;font-weight:700;color:var(--text3);min-width:26px;flex-shrink:0;}
-.ch-info{flex:1;min-width:0;}
-.ch-name-input{
-  width:100%;background:none;border:none;outline:none;
-  color:var(--text);font-family:'EB Garamond',serif;
-  font-size:17px;font-style:italic;font-weight:600;
-}
-.ch-name-input::placeholder{color:var(--text3);font-style:italic;}
-.ch-meta{font-size:11px;color:var(--text3);margin-top:2px;}
-.ch-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;cursor:pointer;}
-.ch-dot.draft{background:var(--text3);}
-.ch-dot.writing{background:var(--amber);}
-.ch-dot.done{background:var(--green);}
-
-/* timeline */
-.tl-card{background:var(--btn);border-radius:var(--radius);padding:12px 14px;border-left:3px solid var(--bg4);}
-.tl-card.type-event{border-left-color:var(--green);}
-.tl-card.type-turn{border-left-color:var(--amber);}
-.tl-card.type-reveal{border-left-color:var(--red);}
-.tl-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;}
-.tl-lbl{font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--text3);}
-.small-del{background:none;border:none;color:var(--text3);cursor:pointer;font-size:16px;line-height:1;}
-.small-del:hover{color:var(--red);}
-.tl-input{
-  width:100%;background:none;border:none;outline:none;
-  color:var(--text);font-family:'EB Garamond',serif;
-  font-size:16px;line-height:1.5;
-}
-.tl-input::placeholder{color:var(--text3);font-style:italic;}
-.chip-row{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;}
-.chip{
-  font-size:9px;font-weight:700;letter-spacing:.1em;padding:3px 9px;
-  border-radius:20px;border:1px solid var(--border);color:var(--text3);
-  cursor:pointer;transition:all .15s;text-transform:uppercase;
-}
-.chip.sel-event{color:var(--green);border-color:var(--green);}
-.chip.sel-turn{color:var(--amber);border-color:var(--amber);}
-.chip.sel-reveal{color:#c07070;border-color:var(--red);}
-
-/* ppp */
-.ppp-card{background:var(--btn);border-radius:var(--radius);padding:12px 14px;}
-.ppp-head{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
-.ppp-badge{font-size:9px;font-weight:700;letter-spacing:.12em;padding:3px 10px;border-radius:20px;cursor:pointer;text-transform:uppercase;}
-.b-promise{background:rgba(154,74,74,.15);color:#c07070;border:1px solid rgba(154,74,74,.3);}
-.b-progress{background:rgba(200,163,64,.12);color:var(--amber);border:1px solid rgba(200,163,64,.3);}
-.b-payoff{background:rgba(90,154,90,.12);color:#7aaa7a;border:1px solid rgba(90,154,90,.3);}
-.ppp-ta{
-  width:100%;background:none;border:none;border-bottom:1px solid var(--border);
-  outline:none;color:var(--text);font-family:'EB Garamond',serif;
-  font-size:16px;line-height:1.5;resize:none;min-height:48px;padding-bottom:4px;
-}
-.ppp-ta::placeholder{color:var(--text3);font-style:italic;}
-.ppp-foot{display:flex;gap:6px;margin-top:8px;align-items:center;}
-.st-dot{width:8px;height:8px;border-radius:50%;cursor:pointer;opacity:.4;transition:opacity .15s;}
-.st-dot.active{opacity:1;}
-.d-open{background:var(--red);}
-.d-paid{background:var(--green);}
-.ppp-ch{
-  background:none;border:none;border-bottom:1px solid var(--border);
-  color:var(--text3);font-size:11px;outline:none;
-  padding:1px 4px;width:55px;margin-left:auto;
-}
-.ppp-ch::placeholder{color:var(--text3);}
-
-/* characters */
-.char-card{background:var(--btn);border-radius:var(--radius);padding:14px 16px;}
-.char-name{
-  width:100%;background:none;border:none;outline:none;
-  color:var(--text);font-family:'EB Garamond',serif;
-  font-size:18px;font-style:italic;font-weight:600;
-  margin-bottom:8px;
-}
-.char-name::placeholder{color:var(--text3);font-style:italic;}
-.char-field{display:flex;flex-direction:column;gap:2px;margin-bottom:8px;}
-.char-field:last-of-type{margin-bottom:0;}
-.cf-label{font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--text3);}
-.cf-input{
-  width:100%;background:none;border:none;border-bottom:1px solid var(--border);
-  outline:none;color:var(--text2);font-family:'EB Garamond',serif;
-  font-size:15px;line-height:1.5;padding:2px 0;
-}
-.cf-input::placeholder{color:var(--text3);font-style:italic;}
-.char-del-row{text-align:right;margin-top:10px;}
-
-/* ai commands */
-.aic-rule{background:var(--btn);border-radius:40px;padding:12px 18px;display:flex;align-items:center;gap:10px;}
-.aic-dot{width:10px;height:10px;border-radius:50%;background:var(--text3);flex-shrink:0;cursor:pointer;transition:background .15s;}
-.aic-dot.on{background:var(--green);}
-.aic-input{flex:1;background:none;border:none;outline:none;color:var(--text);font-size:14px;font-weight:600;}
-.aic-input::placeholder{color:var(--text3);}
-
-/* add button */
-.add-row{padding:4px 0 2px;display:flex;justify-content:center;flex-shrink:0;}
-.btn-add{
-  background:none;border:1px dashed var(--text3);border-radius:30px;
-  color:var(--text3);font-size:11px;font-weight:700;letter-spacing:.12em;
-  text-transform:uppercase;padding:8px 20px;cursor:pointer;transition:all .15s;
-}
-.btn-add:hover{color:var(--text2);border-color:var(--text2);}
-.btn-del-sm{background:none;border:none;color:var(--text3);cursor:pointer;font-size:16px;margin-left:auto;}
-.btn-del-sm:hover{color:var(--red);}
-.btn-del-text{
-  background:none;border:1px solid var(--red);border-radius:20px;
-  color:var(--red);font-size:10px;font-weight:700;letter-spacing:.1em;
-  text-transform:uppercase;padding:4px 12px;cursor:pointer;transition:opacity .15s;
-}
-.btn-del-text:hover{opacity:.7;}
-
-/* aic header special */
-.aic-header-block{flex-shrink:0;padding-bottom:4px;}
-.aic-tag{font-size:11px;letter-spacing:.15em;text-transform:uppercase;color:var(--text3);font-weight:700;}
-.aic-big{font-size:30px;font-weight:900;line-height:1.1;color:var(--text);}
-.aic-desc{font-size:12px;font-style:italic;color:var(--text3);margin-top:3px;}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Fiction Writer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,700;0,800;1,700&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="app.css">
 </head>
+
 <body>
-<div id="app">
 
-  <!-- DRAWER -->
-  <div id="drawer">
-    <div id="strip-label">Menu</div>
-    <div id="drag-handle"><div class="hlines"><div class="hline"></div><div class="hline"></div></div></div>
-
-    <div id="panel-content">
-
-      <!-- MID: buttons -->
-      <div id="mid-sections">
-        <button class="section-btn" id="btn-chapters">Chapters.. <span class="s-count" id="c-ch">0</span></button>
-        <button class="section-btn" id="btn-timeline">Timeline.. <span class="s-count" id="c-tl">0</span></button>
-        <button class="section-btn" id="btn-promises">Promises.. <span class="s-count" id="c-pp">0</span></button>
-        <button class="section-btn" id="btn-characters">Characters.. <span class="s-count" id="c-char">0</span></button>
-        <div style="margin-top:auto">
-          <button class="section-btn" id="btn-aic" style="padding:18px 18px 16px">
-            <div style="font-size:11px;font-style:normal;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--text3);margin-bottom:2px">-Methods-</div>
-            <div style="font-size:24px;font-style:normal;font-weight:900;line-height:1.1">AI Commands</div>
-          </button>
-        </div>
-      </div>
-
-      <!-- FULL: CHAPTERS -->
-      <div class="detail-panel" id="detail-chapters">
-        <button class="back-btn" data-back>‹ back</button>
-        <div class="detail-title">Chapters</div>
-        <div class="detail-scroll" id="chapters-list"></div>
-        <div class="add-row"><button class="btn-add" id="add-ch">+ new chapter</button></div>
-      </div>
-
-      <!-- FULL: TIMELINE -->
-      <div class="detail-panel" id="detail-timeline">
-        <button class="back-btn" data-back>‹ back</button>
-        <div class="detail-title">Timeline</div>
-        <div class="detail-scroll" id="tl-list"></div>
-        <div class="add-row"><button class="btn-add" id="add-tl">+ add event</button></div>
-      </div>
-
-      <!-- FULL: PROMISES -->
-      <div class="detail-panel" id="detail-promises">
-        <button class="back-btn" data-back>‹ back</button>
-        <div class="detail-title">Promises (PPP)</div>
-        <div class="detail-scroll" id="pp-list"></div>
-        <div class="add-row"><button class="btn-add" id="add-pp">+ add promise</button></div>
-      </div>
-
-      <!-- FULL: CHARACTERS -->
-      <div class="detail-panel" id="detail-characters">
-        <button class="back-btn" data-back>‹ back</button>
-        <div class="detail-title">Characters</div>
-        <div class="detail-scroll" id="char-list"></div>
-        <div class="add-row"><button class="btn-add" id="add-char">+ add character</button></div>
-      </div>
-
-      <!-- FULL: AI COMMANDS -->
-      <div class="detail-panel" id="detail-aic">
-        <button class="back-btn" data-back>‹ back</button>
-        <div class="aic-header-block">
-          <div class="aic-tag">-Methods-</div>
-          <div class="aic-big">AI Commands</div>
-          <div class="aic-desc">Rules &amp; preferences — internal context for the AI</div>
-        </div>
-        <div class="detail-scroll" id="aic-list"></div>
-        <div class="add-row"><button class="btn-add" id="add-aic">+ add rule</button></div>
-      </div>
-
-    </div>
-  </div>
-
-  <!-- EDITOR -->
-  <div id="editor-side">
+  <!-- ═══════════════════════════
+  EDITOR PAGE
+═══════════════════════════ -->
+  <div id="editor-page">
     <div id="topbar">
+      <button id="fold-btn" title="Open menu">
+        <img src="fold.png" class="fold-icon" alt="menu">
+      </button>
       <div id="save-status">
         <div id="save-dot"></div>
         <span id="save-label">0 words</span>
@@ -323,272 +30,145 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;}
     <textarea id="write-area" placeholder="Everthing starts here…" spellcheck="false"></textarea>
   </div>
 
-</div>
-<script>
-// ── STATE ──
-const KEY='fw2';
-let S={
-  activeCh:0,
-  chapters:[{title:'Chapter One',text:'',words:0,status:'writing'}],
-  timeline:[],promises:[],characters:[],
-  aic:[
-    {text:'Every scene ends with a cliffhanger — never resolve.',on:true},
-    {text:'Protagonist flow: Instinct → Assess → Response.',on:true},
-    {text:'Magic cycle: Intention → Action → Effect → Conclusion → Reaction.',on:true},
-    {text:'Paragraph: Idea + Justification + (Opposite) + Conclusion.',on:true},
-    {text:'Scene structure: Objective → Conflict → Disaster → Reaction → Dilemma → Decision.',on:true},
-  ]
-};
-function load(){try{const d=localStorage.getItem(KEY);if(d)S={...S,...JSON.parse(d)};}catch(e){}}
-let saveT;
-function save(){
-  clearTimeout(saveT);
-  saveT=setTimeout(()=>{
-    localStorage.setItem(KEY,JSON.stringify(S));
-    const dot=document.getElementById('save-dot');
-    dot.classList.add('saved');
-    setTimeout(()=>dot.classList.remove('saved'),1400);
-  },500);
-}
-load();
+  <!-- overlay -->
+  <div id="overlay"></div>
 
-// ── DRAWER ──
-const drawer=document.getElementById('drawer');
-let dState='closed';
-let activeDet=null;
-
-function setDrawer(state,det){
-  drawer.classList.remove('mid','full');
-  if(state==='mid')drawer.classList.add('mid');
-  if(state==='full')drawer.classList.add('full');
-  dState=state;
-  document.querySelectorAll('.detail-panel').forEach(p=>p.classList.remove('active'));
-  if(state==='full'&&det){
-    const el=document.getElementById('detail-'+det);
-    if(el)el.classList.add('active');
-    activeDet=det;
-  } else if(state!=='full'){activeDet=null;}
-}
-
-let dx0=null;
-function dragStart(x){dx0=x;}
-function dragMove(x){
-  if(dx0===null)return;
-  const d=x-dx0;
-  if(d>180)setDrawer('full',activeDet||'chapters');
-  else if(d>60)setDrawer('mid');
-  else if(d<-60)setDrawer('closed');
-}
-function dragEnd(){dx0=null;}
-
-const handle=document.getElementById('drag-handle');
-handle.addEventListener('mousedown',e=>{dragStart(e.clientX);e.preventDefault();});
-handle.addEventListener('touchstart',e=>{dragStart(e.touches[0].clientX);},{passive:true});
-document.addEventListener('mousemove',e=>{dragMove(e.clientX);});
-document.addEventListener('touchmove',e=>{dragMove(e.touches[0].clientX);},{passive:true});
-document.addEventListener('mouseup',dragEnd);
-document.addEventListener('touchend',dragEnd);
-
-document.getElementById('strip-label').addEventListener('click',()=>setDrawer(dState==='closed'?'mid':'closed'));
-drawer.addEventListener('click',e=>{
-  if(dState==='closed'&&!e.target.closest('#drag-handle'))setDrawer('mid');
-});
-
-['chapters','timeline','promises','characters','aic'].forEach(id=>{
-  document.getElementById('btn-'+id).addEventListener('click',()=>setDrawer('full',id));
-});
-document.querySelectorAll('[data-back]').forEach(b=>b.addEventListener('click',()=>setDrawer('mid')));
-document.getElementById('write-area').addEventListener('click',()=>{if(dState!=='closed')setDrawer('closed');});
-
-// ── EDITOR ──
-const wa=document.getElementById('write-area');
-function loadCh(){
-  const ch=S.chapters[S.activeCh]||S.chapters[0];
-  wa.value=ch.text||'';
-  updateLabel();updateWC();
-}
-function updateLabel(){
-  const ch=S.chapters[S.activeCh];
-  if(!ch)return;
-  document.getElementById('lbl-num').textContent=S.activeCh+1;
-  document.getElementById('lbl-name').textContent=ch.title||'untitled';
-}
-function updateWC(){
-  const w=wa.value.trim().split(/\s+/).filter(Boolean).length;
-  document.getElementById('save-label').textContent=w+' words';
-  if(S.chapters[S.activeCh])S.chapters[S.activeCh].words=w;
-}
-wa.addEventListener('input',()=>{
-  if(!S.chapters[S.activeCh])S.chapters[S.activeCh]={title:'Chapter '+(S.activeCh+1),text:'',words:0,status:'writing'};
-  S.chapters[S.activeCh].text=wa.value;
-  S.chapters[S.activeCh].status='writing';
-  updateWC();renderChapters();updateCounts();save();
-});
-
-// ── CHAPTERS ──
-function renderChapters(){
-  const list=document.getElementById('chapters-list');
-  list.innerHTML='';
-  S.chapters.forEach((ch,i)=>{
-    const div=document.createElement('div');
-    div.className='ch-card'+(i===S.activeCh?' active-ch':'');
-    div.innerHTML=`
-      <span class="ch-num">${String(i+1).padStart(2,'0')}</span>
-      <div class="ch-info">
-        <input class="ch-name-input" value="${esc(ch.title||'')}" placeholder="Chapter title…">
-        <div class="ch-meta">${ch.words||0} words · ${ch.status||'draft'}</div>
+  <!-- ═══════════════════════════
+  MID DRAWER
+═══════════════════════════ -->
+  <div id="mid-drawer">
+    <div id="mid-left-edge">
+      <div class="edge-lines">
+        <div class="eline"></div>
+        <div class="eline"></div>
       </div>
-      <div class="ch-dot ${ch.status||'draft'}"></div>
-    `;
-    const inp=div.querySelector('.ch-name-input');
-    inp.addEventListener('input',e=>{S.chapters[i].title=e.target.value;updateLabel();save();});
-    inp.addEventListener('click',e=>e.stopPropagation());
-    div.querySelector('.ch-dot').addEventListener('click',e=>{
-      e.stopPropagation();
-      const c=['draft','writing','done'];
-      S.chapters[i].status=c[(c.indexOf(S.chapters[i].status||'draft')+1)%3];
-      renderChapters();save();
-    });
-    div.addEventListener('click',()=>{S.activeCh=i;loadCh();renderChapters();setDrawer('closed');});
-    list.appendChild(div);
-  });
-  updateCounts();
-}
-document.getElementById('add-ch').addEventListener('click',()=>{
-  S.chapters.push({title:'Chapter '+(S.chapters.length+1),text:'',words:0,status:'draft'});
-  renderChapters();save();
-});
-
-// ── TIMELINE ──
-function renderTimeline(){
-  const list=document.getElementById('tl-list');
-  list.innerHTML='';
-  S.timeline.forEach((ev,i)=>{
-    const div=document.createElement('div');
-    div.className='tl-card type-'+(ev.type||'event');
-    div.innerHTML=`
-      <div class="tl-top">
-        <span class="tl-lbl">${String(i+1).padStart(2,'0')} · ${(ev.type||'event').toUpperCase()}</span>
-        <button class="small-del">×</button>
+    </div>
+    <div id="mid-right-edge">
+      <div class="edge-lines">
+        <div class="eline"></div>
+        <div class="eline"></div>
       </div>
-      <input class="tl-input" placeholder="What happens…" value="${esc(ev.text||'')}">
-      <div class="chip-row">
-        <span class="chip ${ev.type==='event'?'sel-event':''}" data-t="event">Event</span>
-        <span class="chip ${ev.type==='turn'?'sel-turn':''}" data-t="turn">Turn</span>
-        <span class="chip ${ev.type==='reveal'?'sel-reveal':''}" data-t="reveal">Reveal</span>
+    </div>
+
+    <div id="mid-content">
+      <button class="section-btn" id="btn-chapters">Chapters.. <span class="s-count" id="c-ch">0</span></button>
+      <button class="section-btn" id="btn-timeline">Timeline.. <span class="s-count" id="c-tl">0</span></button>
+      <button class="section-btn" id="btn-promises">Promises.. <span class="s-count" id="c-pp">0</span></button>
+      <button class="section-btn" id="btn-characters">Characters.. <span class="s-count" id="c-ch2">0</span></button>
+    </div>
+
+    <div id="mid-bottom">
+      <button id="add-file-btn">+</button>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════
+   DRAWER (Methods / AI Commands)
+═══════════════════════════ -->
+  <div id="right-drawer">
+    <div id="right-content">
+      <div class="r-header">
+        <div class="r-tag">-Methods-</div>
+        <div class="r-title">AI Commands</div>
+        <div class="r-sub">Internal rules — context for the AI</div>
       </div>
-    `;
-    div.querySelector('.tl-input').addEventListener('input',e=>{S.timeline[i].text=e.target.value;save();});
-    div.querySelectorAll('[data-t]').forEach(c=>c.addEventListener('click',()=>{S.timeline[i].type=c.dataset.t;renderTimeline();save();}));
-    div.querySelector('.small-del').addEventListener('click',()=>{S.timeline.splice(i,1);renderTimeline();save();});
-    list.appendChild(div);
-  });
-  updateCounts();
-}
-document.getElementById('add-tl').addEventListener('click',()=>{
-  S.timeline.push({text:'',type:'event'});renderTimeline();save();
-});
-
-// ── PROMISES ──
-const PTYPE=['promise','progress','payoff'];
-const PCLS=['b-promise','b-progress','b-payoff'];
-const PLBL=['Promise','Progress','Payoff'];
-function renderPromises(){
-  const list=document.getElementById('pp-list');
-  list.innerHTML='';
-  S.promises.forEach((p,i)=>{
-    const ti=Math.max(0,PTYPE.indexOf(p.type||'promise'));
-    const div=document.createElement('div');
-    div.className='ppp-card';
-    div.innerHTML=`
-      <div class="ppp-head">
-        <span class="ppp-badge ${PCLS[ti]}">${PLBL[ti]}</span>
-        <button class="btn-del-sm">×</button>
+      <div class="r-scroll" id="aic-list"></div>
+      <div style="flex-shrink:0;padding-bottom:8px;display:flex;justify-content:center;">
+        <button class="btn-add" id="add-aic">+ add rule</button>
       </div>
-      <textarea class="ppp-ta" placeholder="${p.type==='payoff'?'The earned resolution…':p.type==='progress'?'What builds anticipation…':'What are you promising…'}">${esc(p.text||'')}</textarea>
-      <div class="ppp-foot">
-        <div class="st-dot d-open ${p.status==='open'?'active':''}"></div>
-        <div class="st-dot d-paid ${p.status==='paid'?'active':''}"></div>
-        <input class="ppp-ch" placeholder="ch." value="${esc(p.chapter||'')}">
-      </div>
-    `;
-    div.querySelector('.ppp-badge').addEventListener('click',()=>{S.promises[i].type=PTYPE[(ti+1)%3];renderPromises();save();});
-    div.querySelector('.ppp-ta').addEventListener('input',e=>{S.promises[i].text=e.target.value;save();});
-    div.querySelector('.ppp-ch').addEventListener('input',e=>{S.promises[i].chapter=e.target.value;save();});
-    div.querySelectorAll('.st-dot').forEach(d=>d.addEventListener('click',()=>{S.promises[i].status=d.classList.contains('d-open')?'open':'paid';renderPromises();save();}));
-    div.querySelector('.btn-del-sm').addEventListener('click',()=>{S.promises.splice(i,1);renderPromises();save();});
-    list.appendChild(div);
-  });
-  updateCounts();
-}
-document.getElementById('add-pp').addEventListener('click',()=>{
-  S.promises.push({type:'promise',text:'',chapter:'',status:'open'});renderPromises();save();
-});
+    </div>
+    <div id="right-left-edge">
 
-// ── CHARACTERS ──
-const CFIELDS=[{k:'past',l:'Past'},{k:'capabilities',l:'Capabilities'},{k:'likeability',l:'Likeability'},{k:'goal',l:'Motivation / Goal'}];
-function renderCharacters(){
-  const list=document.getElementById('char-list');
-  list.innerHTML='';
-  S.characters.forEach((ch,i)=>{
-    const div=document.createElement('div');
-    div.className='char-card';
-    div.innerHTML=`
-      <input class="char-name" placeholder="Character name…" value="${esc(ch.name||'')}">
-      ${CFIELDS.map(f=>`
-        <div class="char-field">
-          <span class="cf-label">${f.l}</span>
-          <input class="cf-input" placeholder="…" value="${esc(ch[f.k]||'')}">
-        </div>
-      `).join('')}
-      <div class="char-del-row"><button class="btn-del-text">remove</button></div>
-    `;
-    div.querySelector('.char-name').addEventListener('input',e=>{S.characters[i].name=e.target.value;save();updateCounts();});
-    div.querySelectorAll('.cf-input').forEach((inp,fi)=>{inp.addEventListener('input',()=>{S.characters[i][CFIELDS[fi].k]=inp.value;save();});});
-    div.querySelector('.btn-del-text').addEventListener('click',()=>{S.characters.splice(i,1);renderCharacters();save();});
-    list.appendChild(div);
-  });
-  updateCounts();
-}
-document.getElementById('add-char').addEventListener('click',()=>{
-  S.characters.push({name:'',past:'',capabilities:'',likeability:'',goal:''});renderCharacters();save();
-});
 
-// ── AI COMMANDS ──
-function renderAIC(){
-  const list=document.getElementById('aic-list');
-  list.innerHTML='';
-  S.aic.forEach((r,i)=>{
-    const div=document.createElement('div');
-    div.className='aic-rule';
-    div.innerHTML=`
-      <div class="aic-dot ${r.on?'on':''}"></div>
-      <input class="aic-input" value="${esc(r.text||'')}" placeholder="Write a rule…">
-      <button class="btn-del-sm">×</button>
-    `;
-    div.querySelector('.aic-dot').addEventListener('click',()=>{S.aic[i].on=!S.aic[i].on;renderAIC();save();});
-    div.querySelector('.aic-input').addEventListener('input',e=>{S.aic[i].text=e.target.value;save();});
-    div.querySelector('.btn-del-sm').addEventListener('click',()=>{S.aic.splice(i,1);renderAIC();save();});
-    list.appendChild(div);
-  });
-}
-document.getElementById('add-aic').addEventListener('click',()=>{
-  S.aic.push({text:'',on:true});renderAIC();save();
-});
+    </div>
+  </div>
+  </div>
 
-// ── COUNTS ──
-function updateCounts(){
-  document.getElementById('c-ch').textContent=S.chapters.length;
-  document.getElementById('c-tl').textContent=S.timeline.length;
-  document.getElementById('c-pp').textContent=S.promises.length;
-  document.getElementById('c-char').textContent=S.characters.length;
-}
+  <!-- ═══════════════════════════
+  DETAIL OVERLAY
+═══════════════════════════ -->
+  <div id="detail-overlay">
+    <div id="det-topbar">
+      <button id="det-back">‹ back</button>
+      <div id="det-title">Chapters</div>
+      <button id="trash-btn" title="Trash">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+          stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="3 6 5 6 21 6" />
+          <path d="M19 6l-1 14H6L5 6" />
+          <path d="M10 11v6M14 11v6" />
+          <path d="M9 6V4h6v2" />
+        </svg>
+        <span id="trash-count-badge"></span>
+      </button>
+    </div>
+    <div id="det-scroll"></div>
+    <div id="det-add-row"><button class="btn-add" id="det-add-btn">+ add</button></div>
+  </div>
 
-// ── UTIL ──
-function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+  <!-- ═══════════════════════════
+  TRASH OVERLAY
+═══════════════════════════ -->
+  <div id="trash-overlay">
+    <div id="trash-topbar">
+      <button id="trash-back">‹ back</button>
+      <div id="trash-title">🗑 Trash</div>
+    </div>
+    <div id="trash-scroll"></div>
+  </div>
 
-// ── BOOT ──
-loadCh();renderChapters();renderTimeline();renderPromises();renderCharacters();renderAIC();updateCounts();
-</script>
+  <!-- ═══════════════════════════
+  ADD FILE MODAL  (nome da nova nota)
+═══════════════════════════ -->
+  <div id="add-modal">
+    <div id="add-modal-inner">
+      <div class="modal-title">New note…</div>
+      <input id="new-note-name" class="modal-name-inp" placeholder="Note title…" autocomplete="off" spellcheck="false">
+      <button class="modal-opt" id="modal-confirm">Create</button>
+      <button class="modal-cancel" id="modal-cancel">cancel</button>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════
+  ITEM VIEW (timeline / characters)
+═══════════════════════════ -->
+  <div id="item-view">
+    <div id="item-view-topbar">
+      <button id="item-view-back">‹ back</button>
+      <div id="item-view-title"></div>
+      <button id="item-view-del" title="Delete">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+          stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="3 6 5 6 21 6" />
+          <path d="M19 6l-1 14H6L5 6" />
+          <path d="M10 11v6M14 11v6" />
+          <path d="M9 6V4h6v2" />
+        </svg>
+      </button>
+    </div>
+    <div id="item-view-body"></div>
+  </div>
+
+  <!-- ═══════════════════════════
+  NOTE VIEW
+═══════════════════════════ -->
+  <div id="note-view">
+    <div id="note-view-topbar">
+      <button id="note-view-back">‹ back</button>
+      <input id="note-view-title-inp" placeholder="Note title…" autocomplete="off" spellcheck="false">
+      <button id="note-view-del" title="Delete">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+          stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="3 6 5 6 21 6" />
+          <path d="M19 6l-1 14H6L5 6" />
+          <path d="M10 11v6M14 11v6" />
+          <path d="M9 6V4h6v2" />
+        </svg>
+      </button>
+    </div>
+    <textarea id="note-view-body" placeholder="Write anything…" spellcheck="false"></textarea>
+  </div>
+  <script src="app.js"></script>
 </body>
+
 </html>
